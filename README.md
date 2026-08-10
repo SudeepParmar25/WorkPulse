@@ -1,4 +1,4 @@
-# ⚡ WorkPulseAI
+# ⚡ WorkPulse
 
 ### AI-Powered Workplace Surveillance & Workforce Intelligence Platform
 
