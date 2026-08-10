@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkPulse - Authentication</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/auth.css">
+</head>
+<body>
+    <!-- Background glowing grid effect -->
+    <div class="glow-bg"></div>
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+
+    <div class="auth-container">
+        <!-- Logo Header -->
+        <div class="auth-header">
+            <div class="logo">
+                <i class="fa-solid fa-bolt pulse-icon"></i>
+                <span>WorkPulse<span class="accent">AI</span></span>
+            </div>
+            <p class="subtitle">Next-gen workspace monitoring & intelligence</p>
+        </div>
+
+        <!-- Auth Card Wrapper -->
+        <div class="auth-card">
+            <!-- Step 1: Identifier check -->
+            <div class="auth-step active" id="step-identifier">
+                <h3>Welcome</h3>
+                <p class="step-desc">Enter your username or email to get started.</p>
+                <form id="form-identifier" onsubmit="handleIdentifierSubmit(event)">
+                    <div class="input-group">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="text" id="auth-identifier" required placeholder="Username or Email" autocomplete="username">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Continue</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: Login (Password entry) -->
+            <div class="auth-step" id="step-login">
+                <div class="back-nav" onclick="goBackToIdentifier()">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back</span>
+                </div>
+                <h3>Login</h3>
+                <p class="step-desc">Welcome back! Enter password for <span class="highlight-user" id="login-user-display">user</span></p>
+                <form id="form-login" onsubmit="handleLoginSubmit(event)">
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="login-password" required placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Sign In</span>
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 13px; color: #8e9bb0;">
+                        Don't have an account? 
+                        <a href="#" onclick="switchStep('step-signup')" style="color: #6366f1; text-decoration: none; font-weight: 500;">Sign Up</a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Step 3: Sign Up -->
+            <div class="auth-step" id="step-signup">
+                <div class="back-nav" onclick="goBackToIdentifier()">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back</span>
+                </div>
+                <h3>Create Account</h3>
+                <p class="step-desc">Looks like you're new! Let's set up your profile.</p>
+                <form id="form-signup" onsubmit="handleSignupSubmit(event)">
+                    <div class="input-group">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="signup-username" required placeholder="Username" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="signup-email" required placeholder="Email Address">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-building input-icon"></i>
+                        <input type="text" id="signup-company" placeholder="Company Name (e.g. Central Cafe)">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="signup-password" required placeholder="Password">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-shield input-icon"></i>
+                        <input type="password" id="signup-confirm-password" required placeholder="Confirm Password">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Register & Get Started</span>
+                        <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                    <p style="text-align: center; margin-top: 15px; font-size: 13px; color: #8e9bb0;">
+                        Already have an account? 
+                        <a href="#" onclick="switchStep('step-login')" style="color: #6366f1; text-decoration: none; font-weight: 500;">Sign In</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>

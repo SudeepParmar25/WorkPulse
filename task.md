@@ -1,0 +1,26 @@
+# WorkPulse Upgrade Checklist
+
+- `[x]` Update Database Models & Schemas
+  - `[x]` Add settings columns to `User` in `models.py`
+  - `[x]` Add `face_embedding` to `Employee` in `models.py`
+  - `[x]` Create `Alert` model in `models.py`
+- `[x]` Refactor Face Recognition to Decoupled Interfaces
+  - `[x]` Create `BaseFaceDetector`, `BaseFaceEmbedder`, `BaseFaceClassifier` in `recognition.py`
+  - `[x]` Re-implement current Haar + LBPH logic using the decoupled classes
+  - `[x]` Enhance overlay displays (Role, Confidence %, Hours, Status)
+- `[x]` Implement Real-Time Alerting System
+  - `[x]` Add trigger rules for Alerts (Late, Idle, Checkout, Unknown, Phone) inside `camera.py`
+  - `[x]` Implement `/api/camera/dashboard_live` endpoint for live polling
+- `[x]` Upgrade Employee Management & Profile Modals
+  - `[x]` Update employee profile queries to calculate late rates, timelines, and avg confidence
+  - `[x]` Add a custom confirmation modal for Employee Deletion (no browser confirm)
+- `[x]` Expand Analytics and Settings APIs
+  - `[x]` Support date filters (Today, Week, Month) and department breakdowns in `analytics.py`
+  - `[x]` Implement complete Settings API to load/save company configurations in `settings.py`
+- `[x]` Redesign Dashboard & Templates
+  - `[x]` Restructure dashboard.html with KPIs, split grids, activity timeline, and quick trends
+  - `[x]` Refactor dashboard.css to style the new AI surveillance control center
+  - `[x]` Write dashboard.js logic to wire up settings, live dashboard panels, custom modals, and profile graphs
+- `[x]` Verify System Functionality
+  - `[x]` Compile and seed the database
+  - `[x]` Verify all requirements are fully met

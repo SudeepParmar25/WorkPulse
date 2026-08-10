@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkPulse AI - Enterprise Surveillance</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ChartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <script>
+        window.USER = {
+            isAuthenticated: {{ 'true' if current_user.is_authenticated else 'false' }},
+            username: "{{ current_user.username if current_user.is_authenticated else 'Guest' }}",
+            companyName: "{{ current_user.company_name if (current_user.is_authenticated and current_user.company_name) else '' }}"
+        };
+    </script>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-bolt"></i>
+                <span>WorkPulse<span class="accent">AI</span></span>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" data-tab="live-camera">
+                    <i class="fa-solid fa-video"></i>
+                    <span>Live Channel</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="unknown-gallery">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>Unknown Faces</span>
+                    <span class="badge badge-warning" id="sidebar-unknown-badge" style="display: none;">0</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="staff">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Staff Directory</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Analytics Hub</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="ai-reports">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>AI Intelligence</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="settings">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Control Settings</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="account">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>My Account</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="pulse-status">
+                    <span class="pulse-dot" id="sidebar-surveillance-dot"></span>
+                    <span id="sidebar-surveillance-text">Surveillance Active</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Body Wrapper -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 id="page-title">Live Channel Surveillance</h2>
+                </div>
+                <div class="header-right">
+                    <!-- Real-time Clock -->
+                    <div class="live-clock">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="clock-display">00:00:00</span>
+                    </div>
+
+                    <!-- Profile Info -->
+                    <div class="profile-chip" style="cursor: pointer;" onclick="switchTab('account')">
+                        <div class="avatar" id="header-avatar-container">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <span class="username" id="username-display">Guest</span>
+                    </div>
+
+                    <div id="header-actions">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </header>
+
+            <!-- Workspace Tabs -->
+            <div class="tab-content">
+                
+                <!-- TAB: Live Camera -->
+                <section class="tab-panel active" id="tab-live-camera">
+                    <!-- TIER 1: Live KPIs -->
+                    <div class="live-kpis-strip scroll-x">
+                        <div class="kpi-box">
+                            <span class="kpi-val" id="kpi-current-employees">0</span>
+                            <span class="kpi-lbl">Staff Present</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-info" id="kpi-customers">0</span>
+                            <span class="kpi-lbl">Customers</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-danger" id="kpi-current-unknowns">0</span>
+                            <span class="kpi-lbl">Current Unknowns</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-warning" id="kpi-unknown-entries-today">0</span>
+                            <span class="kpi-lbl">Unknown Entries Today</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val" id="kpi-working-employees">0</span>
+                            <span class="kpi-lbl">Working</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-warning" id="kpi-idle-employees">0</span>
+                            <span class="kpi-lbl">Idle</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-red" id="kpi-phone-alerts">0</span>
+                            <span class="kpi-lbl">Phone Alerts</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-red" id="kpi-security-alerts">0</span>
+                            <span class="kpi-lbl">Security Alerts</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-red" id="kpi-restricted-breaches">0</span>
+                            <span class="kpi-lbl">Restricted Breaches</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val text-blue" id="kpi-accuracy">0%</span>
+                            <span class="kpi-lbl">AI Accuracy</span>
+                        </div>
+                        <div class="kpi-box">
+                            <span class="kpi-val" id="kpi-cam-status">Offline</span>
+                            <span class="kpi-lbl">Camera Link</span>
+                        </div>
+                    </div>
+
+                    <!-- TIER 2: Camera Feed & Real-time Alerts Grid -->
+                    <div class="surveillance-middle-grid">
+                        <!-- Camera Selector Panel -->
+                        <div class="camera-selector-panel" id="live-camera-selector-container">
+                            <div class="panel-header-simple" style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); display:flex; align-items:center; gap:8px;">
+                                <h3 style="margin: 0; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-video" style="color: var(--accent);"></i> Video Feeds</h3>
+                            </div>
+                            <div class="camera-devices-list" id="live-camera-list" style="display:flex; flex-direction:column; gap:8px; padding:12px; overflow-y:auto; max-height:450px;">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="camera-card">
+                            <div class="camera-header">
+                                <div class="cam-title">
+                                    <span class="live-indicator-dot" id="live-indicator"></span>
+                                    <span>Main Surveillance Stream</span>
+                                </div>
+                                <div class="cam-controls" style="display:flex; gap:6px;">
+                                    <button class="btn btn-sm btn-success" id="btn-start-camera" onclick="startCameraStream()">
+                                        <i class="fa-solid fa-play"></i> Start Link
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" id="btn-stop-camera" onclick="stopCameraStream()" disabled>
+                                        <i class="fa-solid fa-stop"></i> Stop Link
+                                    </button>
+                                    <button class="btn btn-sm btn-muted" id="btn-fullscreen-camera" onclick="toggleFullscreen()" style="display:inline-flex; align-items:center; gap:4px;">
+                                        <i class="fa-solid fa-expand"></i> Fullscreen
+                                    </button>
+                                    <button class="btn btn-sm btn-muted" id="btn-zones-config" onclick="toggleZonesDrawingMode()" style="display:inline-flex; align-items:center; gap:4px;">
+                                        <i class="fa-solid fa-draw-polygon"></i> Draw Zones
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" id="btn-manual-capture" onclick="triggerManualCapture()" style="display:inline-flex; align-items:center; gap:4px;" title="Snapshot visible unknown persons">
+                                        <i class="fa-solid fa-camera"></i> Snap Unknown
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="video-container" style="position: relative;">
+                                <img id="camera-stream" class="video-feed" src="" alt="Stream stopped. Click Start Link.">
+                                <canvas id="zone-drawing-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;"></canvas>
+                                <div class="video-overlay" id="stream-overlay">
+                                    <i class="fa-solid fa-video-slash"></i>
+                                    <p>Camera Link Closed</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Zone Drawing Controls (Collapsible) -->
+                            <div id="zone-drawing-panel" style="display: none; padding: 12px 20px; background: rgba(0,0,0,0.55); border-top: 1px solid var(--border-color); align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; z-index: 12;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label style="font-size: 12px; font-weight: 500; color: var(--text-muted);">Zone Name:</label>
+                                    <input type="text" id="zone-name-input" placeholder="e.g. Vault Area" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px 10px; color: #fff; font-size: 12px; outline: none; width: 160px;">
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button class="btn btn-sm btn-success" onclick="saveDrawnZone()"><i class="fa-solid fa-check"></i> Save Zone</button>
+                                    <button class="btn btn-sm btn-muted" onclick="clearDrawnPoints()"><i class="fa-solid fa-eraser"></i> Clear Points</button>
+                                    <button class="btn btn-sm btn-danger" onclick="resetAllDrawnZones()"><i class="fa-solid fa-trash-can"></i> Delete All</button>
+                                    <button class="btn btn-sm btn-muted" onclick="toggleZonesDrawingMode()"><i class="fa-solid fa-xmark"></i> Exit</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Draggable Resizer Bar -->
+                        <div class="resizer-bar" id="mid-resizer"></div>
+
+                        <!-- Alerts Sidebar -->
+                        <div class="alerts-history-panel">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h3 style="margin: 0; font-size: 14px; font-weight: 600;"><i class="fa-solid fa-bell" style="color: var(--accent);"></i> Real-time Alerts Feed</h3>
+                                <button class="btn btn-sm btn-danger" id="btn-clear-all-alerts" onclick="deleteAllAlerts()" style="font-size: 11px; padding: 4px 8px; display: none;"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+                            </div>
+                            <div class="scrollable-list" id="live-alerts-list">
+                                <div class="empty-list-placeholder">
+                                    <i class="fa-regular fa-bell-slash"></i>
+                                    <p>No active alerts logged.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Draggable Horizontal Tier Resizer -->
+                    <div class="resizer-bar-horizontal" id="vertical-tier-resizer"></div>
+
+                    <!-- TIER 3: Bottom Panels Split -->
+                    <div class="surveillance-bottom-grid">
+                        <!-- Employee Statuses -->
+                        <div class="bottom-panel-card" id="bottom-card-1">
+                            <h4>Active Personnel Directory</h4>
+                            <div class="table-container small-table">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Staff</th>
+                                            <th>Dept</th>
+                                            <th>State</th>
+                                            <th>In</th>
+                                            <th>Prod</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="live-employees-table-body">
+                                        <tr>
+                                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">No active personnel detected.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Resizer 1 -->
+                        <div class="resizer-bar" id="bottom-resizer-1"></div>
+
+                        <!-- Live Timeline -->
+                        <div class="bottom-panel-card" id="bottom-card-2">
+                            <h4>Activity Chronological Feed</h4>
+                            <div class="timeline-container scrollable-list" id="activity-timeline-list">
+                                <div class="empty-list-placeholder">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <p>No events logged yet today.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Resizer 2 -->
+                        <div class="resizer-bar" id="bottom-resizer-2"></div>
+
+                        <!-- Unknown face preview & mini charts -->
+                        <div class="bottom-panel-card split-bottom-card" id="bottom-card-3">
+                            <div class="split-top-unknowns">
+                                <h4>Detected Unknown Persons</h4>
+                                <div class="unknown-preview-row" id="unknown-preview-row">
+                                    <!-- previews dynamic -->
+                                    <div class="empty-row-placeholder">No unknown profiles saved today.</div>
+                                </div>
+                            </div>
+                            <div class="split-bottom-chart">
+                                <h4>Real-time Operations Split</h4>
+                                <div class="quick-chart-box">
+                                    <canvas id="chart-quick-operations"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: Unknown Face Gallery -->
+                <section class="tab-panel" id="tab-unknown-gallery">
+                    <div class="guest-overlay" id="unknown-guest-overlay" style="display: none;">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Please login to use this feature</h3>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+                    
+                    <div class="staff-header-actions" style="margin-bottom: 15px;">
+                        <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Unidentified Face Log</h3>
+                        <button class="btn btn-sm btn-danger" id="btn-clear-all-unknowns" onclick="deleteAllUnknownFaces()" style="display: none;">
+                            <i class="fa-solid fa-trash-can"></i> Clear All Profiles
+                        </button>
+                    </div>
+
+                    <div class="gallery-header-info">
+                        <p class="text-muted">Cropped profiles of unidentified faces logged by the surveillance camera loop. Register them as employees directly or clear them.</p>
+                    </div>
+
+                    <div class="unknown-gallery-grid" id="unknown-gallery-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </section>
+
+                <!-- TAB: Staff (Admin Restricted) -->
+                <section class="tab-panel" id="tab-staff">
+                    <div class="guest-overlay" id="staff-guest-overlay">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Please login to use this feature</h3>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+
+                    <div class="staff-header-actions">
+                        <div class="search-bar">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="staff-search-input" placeholder="Search by name, role or department..." oninput="searchStaff()">
+                        </div>
+                        <button class="btn btn-primary" onclick="openAddEmployeeModal()">
+                            <i class="fa-solid fa-plus"></i> Add Employee
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Position</th>
+                                    <th>Department</th>
+                                    <th>Uniform Color</th>
+                                    <th>Templates</th>
+                                    <th>Date Added</th>
+                                    <th>Avg Productivity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-table-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Attendance Logs Section -->
+                    <div style="margin-top: 30px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--text-primary);">
+                            <i class="fa-regular fa-calendar-check" style="color: var(--accent);"></i>
+                            Historical Shift & Attendance Logs
+                        </h3>
+                        <button class="btn btn-sm btn-muted" onclick="loadAttendanceLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Logs</button>
+                    </div>
+
+                    <div class="table-container" style="margin-bottom: 30px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Check-In Time</th>
+                                    <th>Check-Out Time</th>
+                                    <th>Active Hours</th>
+                                    <th>Idle Hours</th>
+                                    <th>Phone Hours</th>
+                                    <th>Status</th>
+                                    <th>Productivity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-logs-table-body">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">No historical logs found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB: Analytics (Admin Restricted) -->
+                <section class="tab-panel" id="tab-analytics">
+                    <div class="guest-overlay" id="analytics-guest-overlay">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Please login to use this feature</h3>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+
+                    <!-- Analytics Filters -->
+                    <div class="filter-row">
+                        <div class="range-presets">
+                            <button class="preset-btn active" id="preset-week" onclick="setAnalyticsRange('week')">Last 7 Days</button>
+                            <button class="preset-btn" id="preset-month" onclick="setAnalyticsRange('month')">Last 30 Days</button>
+                            <button class="preset-btn" id="preset-custom" onclick="setAnalyticsRange('custom')">Custom Range</button>
+                        </div>
+                        <div class="date-inputs" id="analytics-custom-dates" style="display: none;">
+                            <label>From: <input type="date" id="analytics-start-date" onchange="loadAnalytics()"></label>
+                            <label>To: <input type="date" id="analytics-end-date" onchange="loadAnalytics()"></label>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="card-icon indigo"><i class="fa-solid fa-users"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Active Staff</span>
+                                <h3 id="stat-active-employees">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon emerald"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Attendance Rate</span>
+                                <h3 id="stat-attendance-rate">0%</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon amber"><i class="fa-solid fa-clock"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Avg Productivity</span>
+                                <h3 id="stat-avg-productivity">0%</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="card-icon rose"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Security Alerts</span>
+                                <h3 id="stat-security-events">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State Placeholder -->
+                    <div id="analytics-empty-state" class="empty-list-placeholder" style="display:none; flex-direction:column; align-items:center; justify-content:center; padding:80px; width:100%; text-align:center;">
+                        <i class="fa-solid fa-chart-line" style="font-size:48px; color:var(--text-muted); margin-bottom:15px;"></i>
+                        <h3 style="color:var(--text-primary);">No analytics available yet</h3>
+                        <p style="color:var(--text-muted); max-width:400px; margin:8px auto 0;">Register employees and start surveillance shifts to compile business productivity reports.</p>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="charts-grid" id="analytics-charts-grid">
+                        <div class="chart-wrapper">
+                            <h4>Hours Worked Trend</h4>
+                            <canvas id="chart-hours-worked"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Productivity Score Trend</h4>
+                            <canvas id="chart-productivity"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Check-in Distribution (Late vs On-Time)</h4>
+                            <canvas id="chart-checkin"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Activity Split (Active vs Idle hours)</h4>
+                            <canvas id="chart-activity"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Department Performance Productivity</h4>
+                            <canvas id="chart-department-productivity"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Customer Foot Traffic Count (Timeline)</h4>
+                            <canvas id="chart-customer-count"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Daily Incident Alert Frequencies</h4>
+                            <canvas id="chart-alert-trends"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>AI Recognition Accuracy Trend (%)</h4>
+                            <canvas id="chart-recognition-accuracy"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Rankings Section -->
+                    <div class="rankings-row">
+                        <div class="ranking-panel">
+                            <h4>Top Performers</h4>
+                            <ul class="rankings-list" id="list-top-performers">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                        <div class="ranking-panel">
+                            <h4>Needs Improvement (&lt; 80%)</h4>
+                            <ul class="rankings-list" id="list-needs-improvement">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Restricted Zone Events Section -->
+                    <div class="analytics-section-title" style="margin-top: 30px; margin-bottom: 15px;">
+                        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--text-primary);">
+                            <i class="fa-solid fa-shield-halved" style="color: var(--error);"></i>
+                            Restricted Zone Intrusion Events
+                        </h3>
+                    </div>
+                    
+                    <div class="charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div class="chart-wrapper">
+                            <h4>Breaches by Zone</h4>
+                            <canvas id="chart-zone-breaches"></canvas>
+                        </div>
+                        <div class="chart-wrapper" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 250px;">
+                            <h5 style="color: var(--text-muted); font-size: 13px; font-weight: 500; margin-bottom: 0;">Breach Statistics</h5>
+                            <div style="margin-top: 20px;">
+                                <span style="font-size: 48px; font-weight: 700; color: var(--error);" id="metrics-zone-breaches">0</span>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Total Breaches</div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <span style="font-size: 32px; font-weight: 700; color: var(--accent);" id="metrics-zone-avg-duration">0s</span>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Avg. Breach Duration</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-wrapper" style="margin-bottom: 30px; overflow-x: auto;">
+                        <h4>Recent Intrusion Logs</h4>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 600px;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                                    <th style="padding: 10px;">Face Crop</th>
+                                    <th style="padding: 10px;">Name / Subject</th>
+                                    <th style="padding: 10px;">Restricted Zone</th>
+                                    <th style="padding: 10px;">Date &amp; Time</th>
+                                    <th style="padding: 10px;">Duration (sec)</th>
+                                    <th style="padding: 10px;">Full Snapshot</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-zone-breaches-body">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No breaches recorded.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB: AI Reports (Admin Restricted) -->
+                <section class="tab-panel" id="tab-ai-reports">
+                    <div class="guest-overlay" id="reports-guest-overlay">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Please login to use this feature</h3>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+
+                    <div class="report-filters" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+                            <label for="report-scope" style="font-size: 11px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Report Scope</label>
+                            <select id="report-scope" onchange="handleReportScopeChange()" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 13px; width: 100%;">
+                                <option value="all">All Employees</option>
+                                <option value="employee">Specific Employee</option>
+                                <option value="department">Department Group</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="report-employee-group" style="margin-bottom: 0; flex: 1; min-width: 150px; display: none;">
+                            <label for="report-target-employee" style="font-size: 11px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Select Employee</label>
+                            <select id="report-target-employee" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 13px; width: 100%;">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="report-department-group" style="margin-bottom: 0; flex: 1; min-width: 150px; display: none;">
+                            <label for="report-target-department" style="font-size: 11px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Select Department</label>
+                            <select id="report-target-department" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 13px; width: 100%;">
+                                <option value="Operations">Operations</option>
+                                <option value="Kitchen">Kitchen (Restricted)</option>
+                                <option value="Administration">Administration</option>
+                                <option value="Services">Services</option>
+                            </select>
+                        </div>
+
+                        <div class="date-inputs" style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px;">From: <input type="date" id="report-start-date" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 5px 8px; border-radius: 4px; font-size: 13px;"></label>
+                            <label style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px;">To: <input type="date" id="report-end-date" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 5px 8px; border-radius: 4px; font-size: 13px;"></label>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="generateReportSummary()" style="padding: 9px 16px;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+                        </button>
+                    </div>
+
+                    <div class="report-paper" id="report-display" style="display: none;">
+                        <div class="report-paper-header">
+                            <div class="logo">
+                                <i class="fa-solid fa-bolt"></i>
+                                <span>WorkPulse<span class="accent">AI</span></span>
+                            </div>
+                            <span class="report-badge">Executive Analysis</span>
+                        </div>
+                        
+                        <div class="report-meta">
+                            <div><strong>Evaluation Range:</strong> <span id="report-date-range">Last 30 days</span></div>
+                            <div><strong>Report Scope:</strong> <span id="report-scope-display">All Employees</span></div>
+                            <div><strong>Analysis Date:</strong> <span id="report-generated-date">-</span></div>
+                        </div>
+
+                        <hr>
+
+                        <div class="report-section">
+                            <h4><i class="fa-solid fa-receipt"></i> Team Summary Metrics</h4>
+                            <div class="report-metrics">
+                                <div class="rep-met-box">
+                                    <span class="rep-met-val" id="rep-val-attendance">0%</span>
+                                    <span class="rep-met-lbl">Avg Attendance</span>
+                                </div>
+                                <div class="rep-met-box">
+                                    <span class="rep-met-val" id="rep-val-productivity">0%</span>
+                                    <span class="rep-met-lbl">Avg Productivity</span>
+                                </div>
+                                <div class="rep-met-box">
+                                    <span class="rep-met-val" id="rep-val-late">0</span>
+                                    <span class="rep-met-lbl">Security Incident Alerts</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h4><i class="fa-solid fa-circle-info"></i> AI Executive Summary</h4>
+                            <p id="report-text-summary" class="report-text">-</p>
+                        </div>
+
+                        <div class="report-section">
+                            <h4><i class="fa-solid fa-chart-line"></i> Behavioral Analysis</h4>
+                            <p id="report-text-analysis" class="report-text">-</p>
+                        </div>
+
+                        <div class="report-section">
+                            <h4><i class="fa-solid fa-lightbulb"></i> AI Recommendations</h4>
+                            <ul class="report-bullets" id="report-bullets-recommendations">
+                                <!-- dynamic -->
+                            </ul>
+                        </div>
+
+                        <div class="report-actions">
+                            <button class="btn btn-success" onclick="downloadReportPDF()">
+                                <i class="fa-solid fa-file-pdf"></i> Export Styled PDF
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: Settings -->
+                <section class="tab-panel" id="tab-settings">
+                    <div class="guest-overlay" id="settings-guest-overlay">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Please login to use this feature</h3>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+
+                    <div class="settings-grid">
+                        <!-- Camera Channel Management -->
+                        <div class="settings-card camera-manager-card" style="grid-column: span 2;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <h3><i class="fa-solid fa-video"></i> Camera Channel Management</h3>
+                                <button class="btn btn-sm btn-primary" onclick="openAddCameraModal()"><i class="fa-solid fa-plus"></i> Add New Camera</button>
+                            </div>
+                            <div class="table-container" style="overflow-x:auto;">
+                                <table class="staff-table" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Camera Name</th>
+                                            <th>Input Source</th>
+                                            <th>Resolution</th>
+                                            <th>Frame Rate</th>
+                                            <th>Stream Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="camera-settings-table-body">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Company details -->
+                        <div class="settings-card">
+                            <h3><i class="fa-solid fa-building"></i> Company Settings</h3>
+                            <form id="form-settings-company" onsubmit="saveSettingsAll(event)">
+                                <div class="form-group">
+                                    <label for="settings-company-name">Company Name</label>
+                                    <input type="text" id="settings-company-name" required placeholder="e.g. Central Store">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+
+                        <!-- Work rules -->
+                        <div class="settings-card">
+                            <h3><i class="fa-solid fa-business-time"></i> Operational Parameters</h3>
+                            <form id="form-settings-rules" onsubmit="saveSettingsAll(event)">
+                                <div class="form-group">
+                                    <label for="rules-start-time">Shift Start Time (grace comparison)</label>
+                                    <select id="rules-start-time" style="width: 100%; padding: 10px; border-radius: 4px; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-primary); font-family: inherit; font-size: 13px;"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-end-time">Shift End Time</label>
+                                    <select id="rules-end-time" style="width: 100%; padding: 10px; border-radius: 4px; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-primary); font-family: inherit; font-size: 13px;"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-late-threshold">Late Check-in Grace Tolerance (minutes)</label>
+                                    <input type="number" id="rules-late-threshold" min="0" max="120">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-break-duration">Break Limit Allowance (minutes)</label>
+                                    <input type="number" id="rules-break-duration" min="0" max="240">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Parameters</button>
+                            </form>
+                        </div>
+
+                        <!-- Timeouts & Thresholds -->
+                        <div class="settings-card">
+                            <h3><i class="fa-solid fa-sliders"></i> AI Surveillance Limits</h3>
+                            <form id="form-settings-timeouts" onsubmit="saveSettingsAll(event)">
+                                <div class="form-group">
+                                    <label for="rules-idle-timeout">Idle Alert Duration Threshold (seconds)</label>
+                                    <input type="number" id="rules-idle-timeout" min="5" max="300">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-checkout-timeout">Auto-Checkout Timeout (seconds absent)</label>
+                                    <input type="number" id="rules-checkout-timeout" min="10" max="600">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-recognition-threshold">Face Distance Matching Cutoff (lower=stricter)</label>
+                                    <input type="number" id="rules-recognition-threshold" step="0.5" min="40" max="110">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-unknown-capture-policy">Unknown Face Capture Policy</label>
+                                    <select id="rules-unknown-capture-policy">
+                                        <option value="never">Never Save</option>
+                                        <option value="events_only">Save Only on Security Events (Default)</option>
+                                        <option value="always">Always Save</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Limits</button>
+                            </form>
+                        </div>
+
+                        <!-- Camera Setup -->
+                        <div class="settings-card">
+                            <h3><i class="fa-solid fa-camera"></i> Video Source Settings</h3>
+                            <form id="form-settings-camera" onsubmit="saveSettingsAll(event)">
+                                <div class="form-group">
+                                    <label for="rules-camera-settings">Primary Video Stream Source Index</label>
+                                    <select id="rules-camera-settings">
+                                        <option value="0">System Default Camera (Index 0)</option>
+                                        <option value="1">Secondary USB Capture (Index 1)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-camera-fps">Capture Frame Rate Limit (FPS)</label>
+                                    <select id="rules-camera-fps" style="width: 100%; padding: 10px; border-radius: 4px; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-primary); font-family: inherit; font-size: 13px;">
+                                        <option value="25">25 FPS</option>
+                                        <option value="30">30 FPS</option>
+                                        <option value="45">45 FPS (High)</option>
+                                        <option value="60">60 FPS (Ultra / System Cap)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-camera-resolution">Stream Crop Resolution</label>
+                                    <select id="rules-camera-resolution">
+                                        <option value="640x480">Standard (640x480)</option>
+                                        <option value="800x600">Medium (800x600)</option>
+                                        <option value="1280x720">HD (1280x720)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rules-alert-sensitivity">Zone Breach Alert Sensitivity</label>
+                                    <select id="rules-alert-sensitivity">
+                                        <option value="low">Low (Fewer Alert triggers)</option>
+                                        <option value="medium">Medium (Standard)</option>
+                                        <option value="high">High (Immediate Trigger)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group checkbox-group" style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
+                                    <input type="checkbox" id="rules-enable-camera-zones" style="width:auto; margin:0;">
+                                    <label for="rules-enable-camera-zones" style="margin:0; font-weight: 500;">Enable Visual Camera Zones & Dividers</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Camera Setup</button>
+                            </form>
+                        </div>
+
+                        <!-- Theme customization -->
+                        <div class="settings-card">
+                            <h3><i class="fa-solid fa-palette"></i> Panel Theme Mode</h3>
+                            <div class="theme-options">
+                                <button class="theme-btn active" onclick="setTheme('neon')">Neon Cyber</button>
+                                <button class="theme-btn" onclick="setTheme('monochrome')">Monochrome Dark</button>
+                            </div>
+                        </div>
+
+                        <!-- Account Danger Zone -->
+                        <div class="settings-card danger-zone">
+                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h3>
+                            <p>Deleting your WorkPulse company account will permanently remove all logs, databases, face embedding templates, and admin profiles.</p>
+                            <button class="btn btn-danger" onclick="openDeleteAccountModal()">Purge Company Account</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: My Account Settings -->
+                <section class="tab-panel" id="tab-account">
+                    <div class="guest-overlay" id="account-guest-overlay" style="display: none;">
+                        <i class="fa-solid fa-lock"></i>
+                        <h3>Guest Access Restricted</h3>
+                        <p>Please login to configure administrator profile preferences and view developer keys.</p>
+                        <a href="/auth" class="btn btn-primary">Login / Sign Up</a>
+                    </div>
+                    <div class="account-container">
+                        <!-- Profile Card -->
+                        <div class="account-card profile-details-card">
+                            <div class="card-header-with-icon">
+                                <h3><i class="fa-solid fa-user-gear"></i> Profile & Organization</h3>
+                                <p class="card-subtitle">Manage your personal information, organization details, and avatar</p>
+                            </div>
+                            <div class="profile-layout-container">
+                                <!-- Avatar Upload Circle -->
+                                <div class="avatar-upload-section">
+                                    <div class="avatar-upload-preview" id="account-avatar-preview">
+                                        <i class="fa-solid fa-user-shield default-avatar-icon"></i>
+                                    </div>
+                                    <label class="avatar-upload-btn">
+                                        <i class="fa-solid fa-camera"></i> Change Photo
+                                        <input type="file" id="account-avatar-input" accept="image/*" style="display: none;" onchange="handleAvatarUpload(this)">
+                                    </label>
+                                    <span class="avatar-upload-hint">JPG, PNG or GIF (Max 2MB)</span>
+                                </div>
+                                <!-- Profile Fields Form -->
+                                <div class="profile-fields-form">
+                                    <div class="form-grid-2">
+                                        <div class="form-group">
+                                            <label for="account-fullname">Full Name</label>
+                                            <input type="text" id="account-fullname" placeholder="e.g. Jane Doe">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="account-username">Username</label>
+                                            <input type="text" id="account-username" readonly disabled style="opacity: 0.65; cursor: not-allowed;">
+                                        </div>
+                                    </div>
+                                    <div class="form-grid-2">
+                                        <div class="form-group">
+                                            <label for="account-email">Email Address</label>
+                                            <input type="email" id="account-email" placeholder="e.g. admin@workpulse.ai">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="account-phone">Phone Number</label>
+                                            <input type="text" id="account-phone" placeholder="e.g. +1 (555) 019-2834">
+                                        </div>
+                                    </div>
+                                    <div class="form-grid-2">
+                                        <div class="form-group">
+                                            <label for="account-company">Organization Name</label>
+                                            <input type="text" id="account-company" placeholder="e.g. WorkPulse Corp">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="account-timezone">Timezone</label>
+                                            <select id="account-timezone">
+                                                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                                <option value="GMT">GMT (Greenwich Mean Time)</option>
+                                                <option value="EST">EST (Eastern Standard Time)</option>
+                                                <option value="CST">CST (Central Standard Time)</option>
+                                                <option value="PST">PST (Pacific Standard Time)</option>
+                                                <option value="IST">IST (Indian Standard Time)</option>
+                                                <option value="AEST">AEST (Australian Eastern Standard Time)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="saveUserProfileDetails()"><i class="fa-solid fa-floppy-disk"></i> Save Profile Details</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security & Password Card -->
+                        <div class="account-card security-card">
+                            <div class="card-header-with-icon">
+                                <h3><i class="fa-solid fa-shield-halved"></i> Security & Authentication</h3>
+                                <p class="card-subtitle">Update your password to keep your account secure</p>
+                            </div>
+                            <div class="security-form-fields" style="max-width: 550px;">
+                                <div class="form-group">
+                                    <label for="account-pwd-current">Current Password</label>
+                                    <input type="password" id="account-pwd-current" placeholder="••••••••">
+                                </div>
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="account-pwd-new">New Password</label>
+                                        <input type="password" id="account-pwd-new" placeholder="••••••••">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="account-pwd-confirm">Confirm New Password</label>
+                                        <input type="password" id="account-pwd-confirm" placeholder="••••••••">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" onclick="saveUserProfilePassword()"><i class="fa-solid fa-key"></i> Update Security Password</button>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings Card -->
+                        <div class="account-card notifications-card">
+                            <div class="card-header-with-icon">
+                                <h3><i class="fa-solid fa-bell"></i> Preferences & Alerts</h3>
+                                <p class="card-subtitle">Configure email alerts and system reporting preferences</p>
+                            </div>
+                            <div class="notifications-options">
+                                <div class="switch-option-row">
+                                    <div class="switch-option-info">
+                                        <h4>Email Alerts for Security Events</h4>
+                                        <p>Send an instant email notification when a restricted zone breach is detected.</p>
+                                    </div>
+                                    <label class="switch-container">
+                                        <input type="checkbox" id="account-pref-email" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="switch-option-row">
+                                    <div class="switch-option-info">
+                                        <h4>Daily Workspace Performance Summary</h4>
+                                        <p>Receive a daily report of employee attendance metrics, productivity levels, and active work hours.</p>
+                                    </div>
+                                    <label class="switch-container">
+                                        <input type="checkbox" id="account-pref-daily" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="switch-option-row">
+                                    <div class="switch-option-info">
+                                        <h4>Real-Time In-Browser Audio Alerts</h4>
+                                        <p>Play an audible alert chime when a phone violation or security intrusion occurs.</p>
+                                    </div>
+                                    <label class="switch-container">
+                                        <input type="checkbox" id="account-pref-audio" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <button class="btn btn-primary" onclick="saveUserNotificationPrefs()"><i class="fa-solid fa-bell-concierge"></i> Save Preferences</button>
+                            </div>
+                        </div>
+
+                        <!-- Developer Integration & API Keys Card -->
+                        <div class="account-card developer-card">
+                            <div class="card-header-with-icon">
+                                <h3><i class="fa-solid fa-code"></i> Developer API Integration</h3>
+                                <p class="card-subtitle">Use this secret API key to query analytics data or integrate custom hardware feeds</p>
+                            </div>
+                            <div class="api-key-container">
+                                <div class="api-key-box">
+                                    <input type="password" id="account-api-key-field" readonly value="wp_live_empty_key_placeholder" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 4px; padding: 10px 14px; font-family: monospace; font-size: 13px; color: #10b981; flex: 1; outline: none; letter-spacing: 2px;">
+                                    <button class="btn btn-muted" id="btn-toggle-key-visibility" onclick="toggleApiKeyVisibility()" title="Toggle visibility"><i class="fa-solid fa-eye"></i></button>
+                                    <button class="btn btn-muted" onclick="copyApiKeyToClipboard()" title="Copy to clipboard"><i class="fa-solid fa-copy"></i> Copy</button>
+                                    <button class="btn btn-danger" onclick="rotateUserIntegrationKey()" title="Regenerate API Key"><i class="fa-solid fa-arrows-rotate"></i> Rotate</button>
+                                </div>
+                                <span class="api-key-warning"><i class="fa-solid fa-circle-info"></i> Do not share your API key with third parties. Rotating a key immediately revokes access to the previous token.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: Register / Edit Employee -->
+    <div class="modal-backdrop" id="employee-modal">
+        <div class="modal-card modal-large">
+            <div class="modal-header">
+                <h3 id="employee-modal-title">Register Employee Profile</h3>
+                <span class="close-icon" onclick="closeEmployeeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="employee-form" onsubmit="handleEmployeeSubmit(event)">
+                    <input type="hidden" id="employee-id">
+                    
+                    <div class="modal-split-form">
+                        <!-- Left pane: text inputs -->
+                        <div class="modal-form-left">
+                            <div class="form-group">
+                                <label for="employee-name">Full Name</label>
+                                <input type="text" id="employee-name" required placeholder="Jane Doe">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="employee-position">Position / Title</label>
+                                <input type="text" id="employee-position" required placeholder="Lead Barista">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="employee-department">Operational Department</label>
+                                <select id="employee-department">
+                                    <option value="Operations">Operations</option>
+                                    <option value="Kitchen">Kitchen (Restricted)</option>
+                                    <option value="Administration">Administration</option>
+                                    <option value="Services">Services</option>
+                                </select>
+                            </div>
+
+                            <!-- Uniform specs box -->
+                            <div class="uniform-specs-box">
+                                <h4>Uniform Settings (Color Matching Classifier)</h4>
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="employee-uniform-color">Shirt Color</label>
+                                        <select id="employee-uniform-color">
+                                            <option value="None">No Uniform</option>
+                                            <option value="Black">Black</option>
+                                            <option value="Blue">Blue</option>
+                                            <option value="Red">Red</option>
+                                            <option value="Green">Green</option>
+                                            <option value="White">White</option>
+                                            <option value="Orange">Orange</option>
+                                            <option value="Purple">Purple</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="employee-uniform-type">Garment Type</label>
+                                        <input type="text" id="employee-uniform-type" placeholder="e.g. Polo Shirt">
+                                    </div>
+                                </div>
+                                <div class="form-row-2">
+                                    <div class="form-group">
+                                        <label for="employee-apron-color">Apron Color</label>
+                                        <select id="employee-apron-color">
+                                            <option value="None">None</option>
+                                            <option value="Black">Black</option>
+                                            <option value="Brown">Brown</option>
+                                            <option value="Green">Green</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 15px;">
+                                        <input type="checkbox" id="employee-hat" style="width: 18px; height: 18px;">
+                                        <label for="employee-hat" style="margin-bottom: 0;">Wearing Cap/Hat</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Shift parameters box -->
+                            <div class="uniform-specs-box" style="margin-top: 12px; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 6px; background: rgba(255, 255, 255, 0.02);">
+                                <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--accent);"><i class="fa-regular fa-clock"></i> Shift Schedule Hours (Custom per Staff)</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="employee-shift-start">Shift Start</label>
+                                        <select id="employee-shift-start" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 12px;">
+                                            <!-- Populated dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="employee-shift-end">Shift End</label>
+                                        <select id="employee-shift-end" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 12px;">
+                                            <!-- Populated dynamically -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right pane: camera face registers -->
+                        <div class="modal-form-right">
+                            <div class="facial-register-box">
+                                <label id="registration-prompt-title">Face Embedding Snaps (Register 1-5 snaps for FaceID)</label>
+                                <div id="registration-prompt-card" style="background: rgba(99, 102, 241, 0.15); border: 1px dashed var(--accent); padding: 8px 12px; border-radius: 6px; font-size: 11px; margin-bottom: 10px; color: #a5b4fc; text-align: center; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <i class="fa-solid fa-face-viewfinder"></i> 
+                                    <span id="registration-prompt-text">Click "Start Cam" to begin multi-angle registration.</span>
+                                </div>
+                                <div class="capture-panel">
+                                    <div class="video-preview-box">
+                                        <video id="registration-video" autoplay playsinline muted></video>
+                                        <canvas id="registration-canvas" style="display: none;"></canvas>
+                                        <div class="video-preview-overlay" id="video-overlay-msg">
+                                            <i class="fa-solid fa-camera"></i>
+                                            <p>Capture snapshots to register face</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="capture-buttons">
+                                        <button type="button" class="btn btn-sm btn-info" id="btn-start-reg-cam" onclick="startRegistrationCamera()">
+                                            Start Cam
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning" id="btn-capture-reg" onclick="captureRegistrationFace()" disabled>
+                                            Snap Face
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" id="btn-reset-reg" onclick="clearRegistrationSnaps()">
+                                            Clear All
+                                        </button>
+                                    </div>
+                                    <div style="margin-top: 12px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                                        <span style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">— OR —</span>
+                                        <label for="registration-file-input" class="btn btn-sm btn-muted" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-upload"></i> Upload / Snap Photos
+                                        </label>
+                                        <input type="file" id="registration-file-input" accept="image/*" multiple style="display: none;" onchange="handleRegistrationFilesUpload(event)">
+                                    </div>
+
+                                    <!-- Face Preview Tiles row -->
+                                    <div class="face-preview-grid" id="registration-face-previews">
+                                        <!-- dynamic crop cards -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-muted" onclick="closeEmployeeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-employee">Register Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Employee Profile & Attendance History -->
+    <div class="modal-backdrop" id="profile-modal">
+        <div class="modal-card modal-large">
+            <div class="modal-header">
+                <h3 id="profile-name-header">Employee Surveillance Log</h3>
+                <span class="close-icon" onclick="closeProfileModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="profile-layout">
+                    <!-- Profile Sidebar info -->
+                    <div class="profile-sidebar-info">
+                        <div class="profile-avatar-large">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <h4 id="profile-name">-</h4>
+                        <p id="profile-position" class="role-badge">-</p>
+                        <p class="joined-date">Dept: <strong id="profile-dept">-</strong></p>
+                        
+                        <!-- Uniform specifications chip view -->
+                        <div class="profile-uniform-chips" id="profile-uniform-chips-view">
+                            <!-- filled dynamically -->
+                        </div>
+
+                        <!-- Stat grids -->
+                        <div class="profile-quick-stats-grid">
+                            <div class="q-stat-chip">
+                                <span class="q-chip-val" id="profile-stat-days">0</span>
+                                <span class="q-chip-lbl">Shifts</span>
+                            </div>
+                            <div class="q-stat-chip">
+                                <span class="q-chip-val" id="profile-stat-productivity">0%</span>
+                                <span class="q-chip-lbl">Productivity</span>
+                            </div>
+                            <div class="q-stat-chip">
+                                <span class="q-chip-val" id="profile-stat-late">0%</span>
+                                <span class="q-chip-lbl">Late Rate</span>
+                            </div>
+                            <div class="q-stat-chip">
+                                <span class="q-chip-val text-warning" id="profile-stat-idle">0%</span>
+                                <span class="q-chip-lbl">Idle Rate</span>
+                            </div>
+                        </div>
+
+                        <!-- Cumulative hours metrics -->
+                        <div class="profile-cumulative-hours">
+                            <div class="hour-sub">Daily Average: <span id="profile-stat-hrs-daily">0.0</span> hrs</div>
+                            <div class="hour-sub">Weekly Average: <span id="profile-stat-hrs-weekly">0.0</span> hrs</div>
+                            <div class="hour-sub">Monthly Average: <span id="profile-stat-hrs-monthly">0.0</span> hrs</div>
+                        </div>
+                        
+                        <!-- Saved Face Samples gallery preview -->
+                        <div class="profile-face-samples-box">
+                            <h5>Face templates (LBPH models)</h5>
+                            <div class="profile-face-samples-row" id="profile-face-samples-row">
+                                <!-- thumbnails -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Profile panels -->
+                    <div class="profile-main-panels">
+                        <div class="profile-chart-panel">
+                            <h4>Weekly Shift Duration (Hours)</h4>
+                            <div style="height: 120px; position: relative;">
+                                <canvas id="profile-attendance-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="profile-bottom-panels">
+                            <!-- Left: logs -->
+                            <div class="profile-sub-panel">
+                                <h4>Shift Logs</h4>
+                                <div class="table-container small-table">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>In</th>
+                                                <th>Out</th>
+                                                <th>Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="profile-table-body">
+                                            <!-- dynamic -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Right: timeline alerts -->
+                            <div class="profile-sub-panel">
+                                <h4>Behavioral Incidents</h4>
+                                <div class="timeline-container scrollable-list small-timeline" id="profile-timeline-body">
+                                    <!-- dynamic -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Custom Deletion Employee Confirmation -->
+    <div class="modal-backdrop" id="delete-employee-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="text-red"><i class="fa-solid fa-triangle-exclamation"></i> Delete Employee</h3>
+                <span class="close-icon" onclick="closeDeleteEmployeeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-employee-name-display">-</strong>?</p>
+                <p style="margin-top: 10px; color: var(--text-muted); font-size: 13px;">
+                    This action is permanent. It purges all attendance records, productivity scores, and registered face images.
+                </p>
+                <input type="hidden" id="delete-employee-id-val">
+                <div class="modal-footer" style="padding-top: 10px;">
+                    <button type="button" class="btn btn-muted" onclick="closeDeleteEmployeeModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteEmployee()">Permanently Purge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Account Deletion (Double Confirmation Modal) -->
+    <div class="modal-backdrop" id="delete-account-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="text-red"><i class="fa-solid fa-skull-crossbones"></i> Purge Company Account</h3>
+                <span class="close-icon" onclick="closeDeleteAccountModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="text-red"><strong>WARNING: Double Confirmation Required!</strong></p>
+                <p style="margin-top: 5px; color: var(--text-muted); font-size: 13px; line-height: 1.5;">
+                    This will delete all company employees, analytics databases, event history logs, and your admin dashboard configuration. This is irreversibly purged.
+                </p>
+                
+                <form id="delete-account-form" onsubmit="handleDeleteAccountConfirm(event)">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="delete-password-verify">Enter password to authorize purging</label>
+                        <input type="password" id="delete-password-verify" required placeholder="Type password">
+                    </div>
+                    <div class="form-group" style="margin-top: 10px; flex-direction: row; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="double-confirm-checkbox" required style="width: 18px; height: 18px;">
+                        <label for="double-confirm-checkbox" style="margin-bottom: 0; color: var(--error);">I understand this cannot be undone.</label>
+                    </div>
+                    <div class="modal-footer" style="padding-top: 10px;">
+                        <button type="button" class="btn btn-muted" onclick="closeDeleteAccountModal()">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Purge Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Custom Confirm Modal -->
+    <div class="modal-backdrop" id="custom-confirm-modal" style="display: none; align-items: center; justify-content: center; z-index: 99999;">
+        <div class="modal-card" style="max-width: 400px; padding: 25px; text-align: center; border: 1px solid var(--border-color); background: var(--card-bg); box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                <h3 id="confirm-title" style="margin: 0; font-size: 18px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i>
+                    Confirm Action
+                </h3>
+            </div>
+            <div class="modal-body" style="padding: 20px 0;">
+                <p id="confirm-message" style="margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.5;">Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center; border-top: none; padding-top: 0;">
+                <button class="btn btn-muted" id="btn-confirm-cancel" style="min-width: 90px; padding: 8px 16px;">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-proceed" style="min-width: 90px; padding: 8px 16px;">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add / Edit Camera Device -->
+    <div class="modal-backdrop" id="camera-modal">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="camera-modal-title"><i class="fa-solid fa-video"></i> Add Camera Channel</h3>
+                <span class="close-icon" onclick="closeCameraModal()">&times;</span>
+            </div>
+            <form id="form-camera-device" onsubmit="saveCameraDevice(event)">
+                <input type="hidden" id="camera-device-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="camera-name-input">Camera Name</label>
+                        <input type="text" id="camera-name-input" required placeholder="e.g. Front Entrance Cam">
+                    </div>
+                    <div class="form-group" style="margin-top: 12px;">
+                        <label for="camera-source-select">Select Camera Device</label>
+                        <select id="camera-source-select" onchange="toggleCustomCameraSourceInput()" style="width:100%; padding:8px; border-radius:6px; background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color);">
+                            <option value="">-- Scanning connected devices... --</option>
+                            <option value="custom">Custom Source (IP Stream / RTSP / Video File)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="camera-custom-source-group" style="margin-top: 12px; display: none;">
+                        <label for="camera-source-input">Custom Source (Index, RTSP URL, or File Path)</label>
+                        <input type="text" id="camera-source-input" placeholder="e.g. 0, 1, or rtsp://username:password@ip:port/h264">
+                        <small style="color: var(--text-muted); font-size:11px; margin-top:4px;">Enter RTSP URL, test video path, or local index if not auto-detected.</small>
+                    </div>
+                    <div class="form-grid-2" style="margin-top: 12px;">
+                        <div class="form-group">
+                            <label for="camera-resolution-input">Stream Resolution</label>
+                            <select id="camera-resolution-input">
+                                <option value="640x480">Standard (640x480)</option>
+                                <option value="1280x720">HD Ready (1280x720)</option>
+                                <option value="1920x1080">Full HD (1920x1080)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="camera-fps-input">Target Frame Rate (FPS)</label>
+                            <select id="camera-fps-input">
+                                <option value="10">10 FPS</option>
+                                <option value="15">15 FPS</option>
+                                <option value="20" selected>20 FPS</option>
+                                <option value="25">25 FPS</option>
+                                <option value="30">30 FPS</option>
+                                <option value="60">60 FPS</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-muted" onclick="closeCameraModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-camera-submit">Save Camera</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main Scripts -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
